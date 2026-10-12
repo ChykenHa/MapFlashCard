@@ -1237,7 +1237,6 @@
   // =========================================================================
   // 11. MODULE 6: GEMINI AI GEOGRAPHY TUTOR
   // =========================================================================
-  const GEMINI_API_KEY = "AIzaSyA4Bv0Hx6h1nuzC7OIkC-9EwhYV_KBsk1E";
   const GEMINI_MODEL = "gemini-3.5-flash-lite";
 
   const aiChatMessages = document.getElementById("aiChatMessages");
@@ -1246,6 +1245,7 @@
   const aiInputField = document.getElementById("aiInputField");
   const btnAiSend = document.getElementById("btnAiSend");
   const btnClearAiChat = document.getElementById("btnClearAiChat");
+  const btnConfigAiKey = document.getElementById("btnConfigAiKey");
   const floatingAiLauncher = document.getElementById("floatingAiLauncher");
   const btnAskAiAboutProvince = document.getElementById("btnAskAiAboutProvince");
   const btnFlashcardAskAi = document.getElementById("btnFlashcardAskAi");
@@ -1305,39 +1305,82 @@
 
     const systemInstruction = "Bạn là Trợ lý AI Gia sư Địa lý Việt Nam 2026, chuyên gia về Nghị quyết số 202/2025/QH15 của Quốc hội về việc sắp xếp đơn vị hành chính cấp tỉnh (cả nước còn 34 đơn vị: 6 thành phố trực thuộc Trung ương, 28 tỉnh). Hãy trả lời bằng tiếng Việt sư phạm, khúc chiết, chuẩn xác, truyền cảm hứng học tập cho học sinh và giáo viên. Dùng định dạng gạch đầu dòng và in đậm các từ khóa quan trọng.";
 
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemInstruction }]
-          },
-          contents: [{
-            parts: [{ text: cleanPrompt }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1200
-          }
-        })
-      });
+    const requestPayload = {
+      system_instruction: {
+        parts: [{ text: systemInstruction }]
+      },
+      contents: [{
+        parts: [{ text: cleanPrompt }]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1200
+      }
+    };
 
-      const data = await res.json();
+    try {
       let replyText = "";
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-        replyText = data.candidates[0].content.parts.map(p => p.text).join("");
-      } else if (data.error) {
-        replyText = `Lỗi kết nối AI: ${data.error.message || "Vui lòng thử lại sau ít phút."}`;
-      } else {
-        replyText = "Không nhận được phản hồi từ mô hình AI. Vui lòng thử lại.";
+      let handled = false;
+
+      // 1. Ưu tiên gọi qua Server proxy (/api/gemini) để bảo mật API key từ .env
+      try {
+        const proxyRes = await fetch("/api/gemini", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestPayload)
+        });
+
+        if (proxyRes.ok) {
+          const data = await proxyRes.json();
+          if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+            replyText = data.candidates[0].content.parts.map(p => p.text).join("");
+          } else if (data.error) {
+            replyText = `Lỗi từ Gemini AI: ${data.error.message || "Vui lòng thử lại sau."}`;
+          }
+          handled = true;
+        } else if (proxyRes.status === 500) {
+          const data = await proxyRes.json().catch(() => ({}));
+          if (data.error && data.error.message) {
+            replyText = `Lỗi máy chủ: ${data.error.message}`;
+            handled = true;
+          }
+        }
+      } catch (proxyErr) {
+        // Máy chủ proxy không chạy hoặc không truy cập được (vd: chạy file:/// hoặc static GitHub Pages)
+      }
+
+      // 2. Nếu không gọi được server proxy, kiểm tra API key cá nhân người dùng đã lưu ở localStorage
+      if (!handled) {
+        const customKey = localStorage.getItem("user_gemini_api_key");
+        if (customKey && customKey.trim()) {
+          const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(customKey.trim())}`;
+          const directRes = await fetch(directUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestPayload)
+          });
+          const data = await directRes.json();
+          if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+            replyText = data.candidates[0].content.parts.map(p => p.text).join("");
+          } else if (data.error) {
+            replyText = `Lỗi kết nối AI (Khóa cá nhân): ${data.error.message || "Kiểm tra lại API Key."}`;
+          }
+          handled = true;
+        }
+      }
+
+      if (!handled && !replyText) {
+        replyText = `
+⚠️ <strong>Chưa thể kết nối tới Trợ lý AI:</strong><br>
+&bull; <em>Chạy trên máy tính:</em> Vui lòng chạy máy chủ bằng lệnh <code>node server.js</code> trong terminal để hệ thống tự động bảo mật và sử dụng API Key trong file <code>.env</code>.<br>
+&bull; <em>Chạy trên GitHub Pages (web tĩnh):</em> Vui lòng bấm nút <strong>Cài Đặt API Key</strong> ở góc trên bên phải khung chat để điền Google Gemini API Key cá nhân của bạn.
+        `.trim();
       }
 
       appendChatMessage(replyText, "bot");
       sound.success();
     } catch (err) {
-      appendChatMessage("Không thể kết nối tới Google AI. Vui lòng kiểm tra lại kết nối mạng.", "bot");
+      appendChatMessage("Không thể kết nối tới Google AI. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.", "bot");
       sound.error();
     } finally {
       if (aiTypingIndicator) aiTypingIndicator.style.display = "none";
@@ -1371,6 +1414,27 @@
       `;
       sound.click();
       showToast("Đã làm mới lịch sử trò chuyện AI");
+    });
+  }
+
+  // Bind Config Custom API Key (Dành cho web tĩnh / GitHub Pages)
+  if (btnConfigAiKey) {
+    btnConfigAiKey.addEventListener("click", () => {
+      const currentKey = localStorage.getItem("user_gemini_api_key") || "";
+      const input = prompt(
+        "Nhập Google Gemini API Key cá nhân của bạn (Lấy miễn phí tại https://aistudio.google.com/app/apikey):\n(Để trống nếu muốn xóa và dùng API key mặc định từ máy chủ node server.js)",
+        currentKey
+      );
+      if (input !== null) {
+        const trimmed = input.trim();
+        if (trimmed) {
+          localStorage.setItem("user_gemini_api_key", trimmed);
+          showToast("Đã lưu API Key cá nhân thành công!");
+        } else {
+          localStorage.removeItem("user_gemini_api_key");
+          showToast("Đã xóa API Key cá nhân. Sẽ ưu tiên máy chủ nội bộ.");
+        }
+      }
     });
   }
 
