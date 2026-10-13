@@ -1494,6 +1494,155 @@
   }
 
   // =========================================================================
+  // 11B. TEACHER AUTHOR POPUP CONTROLLER (10S AUTO-DISMISS)
+  // =========================================================================
+  const teacherPopup = document.getElementById("teacherPopup");
+  const teacherPopupClose = document.getElementById("teacherPopupClose");
+  const teacherInfoBtn = document.getElementById("teacherInfoBtn");
+  const floatingTeacherLauncher = document.getElementById("floatingTeacherLauncher");
+  const teacherAvatarContainer = document.getElementById("teacherAvatarContainer");
+  const teacherProgressBar = document.getElementById("teacherProgressBar");
+  const teacherCountdownText = document.getElementById("teacherCountdownText");
+  const teacherLightbox = document.getElementById("teacherLightbox");
+  const btnTeacherLightboxClose = document.getElementById("btnTeacherLightboxClose");
+
+  const TEACHER_POPUP_DURATION_MS = 10000;
+  let teacherRemainingMs = TEACHER_POPUP_DURATION_MS;
+  let teacherTimerInterval = null;
+  let teacherLastTickTime = null;
+  let isTeacherTimerPaused = false;
+  let isTeacherPopupOpen = false;
+
+  function updateTeacherTimerUI() {
+    const secondsLeft = Math.max(1, Math.ceil(teacherRemainingMs / 1000));
+    if (teacherCountdownText) {
+      if (isTeacherTimerPaused) {
+        teacherCountdownText.innerHTML = `⏸ Tạm dừng (<strong>${secondsLeft}s</strong>)`;
+      } else {
+        teacherCountdownText.innerHTML = `Tự tắt sau: <strong>${secondsLeft}s</strong>`;
+      }
+    }
+    if (teacherProgressBar) {
+      const pct = Math.max(0, Math.min(100, (teacherRemainingMs / TEACHER_POPUP_DURATION_MS) * 100));
+      teacherProgressBar.style.width = `${pct}%`;
+    }
+  }
+
+  function startTeacherCountdown(durationMs) {
+    clearInterval(teacherTimerInterval);
+    teacherRemainingMs = durationMs;
+    teacherLastTickTime = Date.now();
+    isTeacherTimerPaused = false;
+    updateTeacherTimerUI();
+
+    teacherTimerInterval = setInterval(() => {
+      if (isTeacherTimerPaused) return;
+
+      const now = Date.now();
+      const delta = now - teacherLastTickTime;
+      teacherLastTickTime = now;
+      teacherRemainingMs = Math.max(0, teacherRemainingMs - delta);
+      updateTeacherTimerUI();
+
+      if (teacherRemainingMs <= 0) {
+        clearInterval(teacherTimerInterval);
+        closeTeacherPopup();
+      }
+    }, 100);
+  }
+
+  function openTeacherPopup() {
+    if (!teacherPopup) return;
+    isTeacherPopupOpen = true;
+
+    if (floatingTeacherLauncher) {
+      floatingTeacherLauncher.classList.remove("visible");
+    }
+
+    teacherPopup.classList.remove("hiding");
+    teacherPopup.classList.add("show");
+
+    startTeacherCountdown(TEACHER_POPUP_DURATION_MS);
+  }
+
+  function closeTeacherPopup() {
+    if (!teacherPopup || !isTeacherPopupOpen) return;
+    isTeacherPopupOpen = false;
+    clearInterval(teacherTimerInterval);
+
+    teacherPopup.classList.add("hiding");
+    setTimeout(() => {
+      teacherPopup.classList.remove("show", "hiding");
+      if (floatingTeacherLauncher) {
+        floatingTeacherLauncher.classList.add("visible");
+      }
+    }, 450);
+  }
+
+  function pauseTeacherCountdown() {
+    if (!isTeacherPopupOpen || teacherRemainingMs <= 0) return;
+    isTeacherTimerPaused = true;
+    updateTeacherTimerUI();
+  }
+
+  function resumeTeacherCountdown() {
+    if (!isTeacherPopupOpen || teacherRemainingMs <= 0) return;
+    isTeacherTimerPaused = false;
+    teacherLastTickTime = Date.now();
+    updateTeacherTimerUI();
+  }
+
+  // Setup Event Listeners for Teacher Popup
+  if (teacherPopup) {
+    // Hover: pause timer to read comfortably
+    teacherPopup.addEventListener("mouseenter", pauseTeacherCountdown);
+    teacherPopup.addEventListener("mouseleave", resumeTeacherCountdown);
+  }
+
+  if (teacherPopupClose) {
+    teacherPopupClose.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeTeacherPopup();
+    });
+  }
+
+  if (teacherInfoBtn) {
+    teacherInfoBtn.addEventListener("click", () => {
+      openTeacherPopup();
+    });
+  }
+
+  if (floatingTeacherLauncher) {
+    floatingTeacherLauncher.addEventListener("click", () => {
+      openTeacherPopup();
+    });
+  }
+
+  // Lightbox for full photo preview
+  if (teacherAvatarContainer && teacherLightbox) {
+    teacherAvatarContainer.addEventListener("click", () => {
+      teacherLightbox.classList.add("active");
+      pauseTeacherCountdown();
+    });
+  }
+
+  if (btnTeacherLightboxClose && teacherLightbox) {
+    btnTeacherLightboxClose.addEventListener("click", () => {
+      teacherLightbox.classList.remove("active");
+      resumeTeacherCountdown();
+    });
+  }
+
+  if (teacherLightbox) {
+    teacherLightbox.addEventListener("click", (e) => {
+      if (e.target === teacherLightbox) {
+        teacherLightbox.classList.remove("active");
+        resumeTeacherCountdown();
+      }
+    });
+  }
+
+  // =========================================================================
   // 12. INITIALIZATION ON LOAD
   // =========================================================================
   function initApp() {
@@ -1504,6 +1653,11 @@
     generateRandomQuizSet();
     renderDirectory();
     updateMasteryStats();
+
+    // Tự động mở popup thông tin Giáo viên tác giả sau 600ms (hiển thị 10s rồi tự tắt)
+    setTimeout(() => {
+      openTeacherPopup();
+    }, 600);
   }
 
   if (document.readyState === "loading") {

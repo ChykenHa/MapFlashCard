@@ -1849,3 +1849,378 @@ kbd {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
 }
 
+/* ==========================================================================
+   TEACHER AUTHOR POPUP (BÊN TRÁI - 10S AUTO-DISMISS)
+   ========================================================================== */
+.teacher-popup {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-140%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.teacher-popup.show {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.teacher-popup.hiding {
+  transform: translateX(-140%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.teacher-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(75, 163, 227, 0.15), rgba(75, 163, 227, 0.04));
+  border-bottom: 1px solid var(--border-light);
+}
+
+.teacher-popup-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--mono-accent);
+}
+
+.teacher-popup-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--trans-fast);
+}
+
+.teacher-popup-close-btn:hover {
+  background: var(--bg-pill);
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+.teacher-popup-body {
+  padding: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.teacher-avatar-container {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--mono-accent);
+  transition: transform var(--trans-fast), box-shadow var(--trans-fast);
+}
+
+.teacher-avatar-container:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px var(--mono-glow);
+}
+
+.teacher-avatar-img {
+  width: 84px;
+  height: 104px;
+  display: block;
+  object-fit: cover;
+  object-position: center 25%;
+  background: var(--bg-pill);
+}
+
+.teacher-avatar-tag {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: var(--mono-accent);
+  color: var(--mono-accent-invert);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.teacher-info-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.teacher-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.teacher-name {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.teacher-year-tag {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--bg-pill);
+  color: var(--mono-accent);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+
+.teacher-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.teacher-info-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.teacher-info-text strong {
+  color: var(--text-primary);
+}
+
+.teacher-info-bio {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border-light);
+  padding-top: 5px;
+}
+
+.teacher-popup-footer {
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-light);
+  padding: 8px 16px 0;
+  position: relative;
+}
+
+.teacher-footer-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+}
+
+.teacher-countdown-text strong {
+  color: var(--mono-accent);
+}
+
+.teacher-progress-track {
+  width: calc(100% + 32px);
+  margin: 0 -16px;
+  height: 4px;
+  background: var(--border-light);
+  overflow: hidden;
+}
+
+.teacher-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--mono-accent), #38bdf8);
+  transition: width 0.1s linear;
+}
+
+/* Floating Mini Trigger for Author (Left Side) */
+.floating-teacher-launcher {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+  padding: 8px 14px 8px 10px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 99;
+  transform: translateY(100px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--trans-fast);
+}
+
+.floating-teacher-launcher.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.floating-teacher-launcher:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 22px var(--mono-glow);
+  border-color: var(--mono-accent);
+  color: var(--mono-accent);
+}
+
+.floating-teacher-avatar-mini {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid var(--mono-accent);
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.floating-teacher-avatar-mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+}
+
+/* Lightbox Modal for Teacher Image */
+.teacher-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  padding: 20px;
+}
+
+.teacher-lightbox.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.teacher-lightbox-content {
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  transform: scale(0.92);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.teacher-lightbox.active .teacher-lightbox-content {
+  transform: scale(1);
+}
+
+.teacher-lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  border: none;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background var(--trans-fast);
+}
+
+.teacher-lightbox-close:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.teacher-lightbox-img {
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  background: #000000;
+  display: block;
+}
+
+.teacher-lightbox-caption {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.teacher-lightbox-caption strong {
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.teacher-lightbox-caption span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .teacher-popup {
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
+    width: auto;
+    max-width: calc(100vw - 28px);
+  }
+  .floating-teacher-launcher {
+    bottom: 14px;
+    left: 14px;
+  }
+}
+
+
